@@ -1,0 +1,5 @@
+[target.aarch64-linux-android]
+linker = "/Users/martin/Library/Android/sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android34-clang"
+ar = "/Users/martin/Library/Android/sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar"
+rustflags = ["-C", "target-feature=+mte"]
+
