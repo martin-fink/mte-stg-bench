@@ -17,6 +17,69 @@ pub unsafe fn stg(mem: &mut [u8], tag: u64) {
     }
 }
 
+pub unsafe fn stg_prefetch(mem: &mut [u8], tag: u64) {
+    assert_eq!(mem.len() % 32, 0);
+
+    let index = mem.as_mut_ptr();
+    let end = index.add(mem.len());
+
+    let line_size = 0u64;
+    let tmp = 0u64;
+    let next = 0u64;
+
+    // The following code is a modified version of the code from the Android Scudo project
+    // https://android.googlesource.com/platform/external/scudo/+/refs/tags/android-14.0.0_r1/standalone/memtag.h#167
+    asm! {
+        "DCZID .req {tmp}",
+        "mrs DCZID, dczid_el0",
+        "tbnz DCZID, #4, 4f",
+        "and DCZID, DCZID, #15",
+        "mov {line_size}, #4",
+        "lsl {line_size}, {line_size}, DCZID",
+        ".unreq DCZID",
+
+        "Size .req {tmp}",
+        "sub Size, {end}, {index}",
+        "cmp Size, {line_size}, lsl #1",
+        "b.lt 4f",
+        ".unreq Size",
+
+        "LineMask .req {tmp}",
+        "sub LineMask, {line_size}, #1",
+
+        "orr {next}, {index}, LineMask",
+
+        "2:",
+        "stg {tag}, [{index}], #16",
+        "cmp {index}, {next}",
+        "b.lt 2b",
+
+        "bic {next}, {end}, LineMask",
+        ".unreq LineMask",
+
+        "3:",
+        "dc gzva, {index}",
+        "add {index}, {index}, {line_size}",
+        "cmp {index}, {next}",
+        "b.lt 3b",
+
+        "4:",
+        "cmp {index}, {end}",
+        "b.ge 5f",
+        "stg {tag}, [{index}], #16",
+        "b 4b",
+
+        "5:",
+
+        tmp = in(reg) tmp,
+        line_size = in(reg) line_size,
+        next = in(reg) next,
+        index = in(reg) index,
+        end = in(reg) end,
+        tag = in(reg) tag,
+    };
+}
+
 pub unsafe fn stg_zero(mem: &mut [u8], tag: u64) {
     assert_eq!(mem.len() % 32, 0);
 

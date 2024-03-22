@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use mte_measurement::{memset, st2g, st2g_zero, stg, stgp, stg_zero, stzg};
+use mte_measurement::{memset, st2g, st2g_zero, stg, stg_prefetch, stg_zero, stgp, stzg};
 use rand::random;
 
 // 128 MiB
@@ -64,6 +64,13 @@ pub fn criterion_benchmark_stg(c: &mut Criterion) {
         b.iter_custom(|iters| {
             measure_custom(iters, |mem| unsafe {
                 stg(black_box(mem), black_box(random()))
+            })
+        })
+    });
+    c.bench_function("stg+prefetch", |b| {
+        b.iter_custom(|iters| {
+            measure_custom(iters, |mem| unsafe {
+                stg_prefetch(black_box(mem), black_box(random()))
             })
         })
     });

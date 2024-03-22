@@ -3,15 +3,16 @@
 This repo contains my code to measure the performance of different instructions to tag memory on a Pixel 8.
 It measures the following variants on 128 MiB of memory:
 
-| Variant     | Instruction | Granule size | Implicit zero | memset |
-|-------------|-------------|--------------|---------------|--------|
-| memset      | -           | -            | No            | Yes    |
-| stg         | `stg`       | `16`         | No            | No     |
-| stgp        | `stgp`      | `16`         | Yes           | No     |
-| st2g        | `st2g`      | `32`         | No            | No     |
-| stzg        | `stzg`      | `16`         | Yes           | No     |
-| stg+memset  | `stg`       | `16`         | No            | Yes    |
-| st2g+memset | `st2g`      | `32`         | No            | Yes    |
+| Variant      | Instruction | Granule size | Implicit zero | memset |
+|--------------|-------------|--------------|---------------|--------|
+| memset       | -           | -            | No            | Yes    |
+| stg          | `stg`       | `16`         | No            | No     |
+| stg+prefetch | `stg`       | `16`         | No            | No     |
+| stgp         | `stgp`      | `16`         | Yes           | No     |
+| st2g         | `st2g`      | `32`         | No            | No     |
+| stzg         | `stzg`      | `16`         | Yes           | No     |
+| stg+memset   | `stg`       | `16`         | No            | Yes    |
+| st2g+memset  | `st2g`      | `32`         | No            | Yes    |
 
 On your Pixel, install Termux and run the following commands to install the necessary dependencies:
 
