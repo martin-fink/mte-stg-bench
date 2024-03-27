@@ -1,52 +1,14 @@
 use std::hint::black_box;
-use mte_measurement::memset;
+use mte_measurement::{memset, MTEMode, set_mte_mode};
 
 // 128 MiB
 const SIZE: usize = 256 * 1024 * 1024;
 
-/// In which mode MTE should be enabled
-#[derive(Copy, Clone)]
-pub enum MTEMode {
-    /// Ignore tag check faults
-    None,
-    /// Synchronous tag check fault mode
-    Sync,
-    /// Asynchronous tag check fault mode
-    Async,
-}
-
-impl MTEMode {
-    fn mask(&self) -> u64 {
-        const PR_MTE_TCF_SHIFT: i32 = 1;
-        match self {
-            MTEMode::None => 0,
-            MTEMode::Sync => 1u64 << PR_MTE_TCF_SHIFT,
-            MTEMode::Async => 2u64 << PR_MTE_TCF_SHIFT,
-        }
-    }
-}
-
 fn measure_custom(iters: u64, mode: MTEMode, f: impl Fn(&mut [u8]) -> ()) -> std::time::Duration {
     let mut result = std::time::Duration::from_secs(0);
 
-    #[cfg(any(target_os = "linux", target_os = "android"))]
-    unsafe {
-        const PR_SET_TAGGED_ADDR_CTRL: i32 = 55;
-        const PR_TAGGED_ADDR_ENABLE: u64 = 1 << 0;
-        const PR_MTE_TAG_SHIFT: i32 = 3;
+    unsafe { set_mte_mode(mode) };
 
-        assert_eq!(
-            libc::prctl(
-                PR_SET_TAGGED_ADDR_CTRL,
-                PR_TAGGED_ADDR_ENABLE | mode.mask() | (0x0 << PR_MTE_TAG_SHIFT), // no excluded tags for irg
-                0,
-                0,
-                0,
-            ),
-            0,
-            "could not enable mte"
-        );
-    }
 
     for _ in 0..iters {
         let mem = unsafe {

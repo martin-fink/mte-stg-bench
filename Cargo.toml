@@ -17,6 +17,10 @@ path = "src/mte-sync.rs"
 name = "mte-async"
 path = "src/mte-async.rs"
 
+[[bin]]
+name = "migrate"
+path = "src/migrate.rs"
+
 [dependencies]
 libc = "0.2.153"
 rand = "0.9.0-alpha.1"
@@ -30,4 +34,8 @@ harness = false
 
 [[bench]]
 name = "sync_async"
+harness = false
+
+[[bench]]
+name = "migrate"
 harness = false

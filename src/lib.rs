@@ -148,3 +148,142 @@ pub unsafe fn memset(mem: &mut [u8]) {
 
     mem.fill(0);
 }
+
+pub unsafe fn set_tags_random(mem: &mut [u8]) {
+    assert_eq!(mem.len() % 16, 0);
+
+    let mut index = mem.as_mut_ptr();
+    let end = index.add(mem.len());
+    let mut tag = 0u64;
+
+    while index != end {
+        asm!(
+            "stg {tag}, [{index}], #16",
+            "addg {tag}, {tag}, #0, #1",
+            tag = inout(reg) tag,
+            index = inout(reg) index,
+        );
+    }
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub unsafe fn migrate_mte_off(from: &[u8], to: &mut [u8]) {
+    assert_eq!(from.len() % 16, 0);
+    assert!(to.len() >= from.len());
+
+    set_mte_mode(MTEMode::None);
+
+    to.copy_from_slice(from);
+
+    let mut index = from.as_ptr();
+    let mut index_to = to.as_mut_ptr();
+    let end = index.add(from.len());
+
+    while index != end {
+        asm!(
+            "ldg {tag}, [{index}]",
+            "stg {tag}, [{index_to}], #16",
+            tag = out(reg) _,
+            index = in(reg) index,
+            index_to = inout(reg) index_to,
+        );
+        index = index.add(16);
+    }
+
+    set_mte_mode(MTEMode::Sync);
+}
+
+pub unsafe fn migrate_tags(from: &[u8], to: &mut [u8]) {
+    assert!(to.len() >= from.len());
+
+    let mut index = from.as_ptr();
+    let mut index_to = to.as_mut_ptr();
+    let end = index.add(from.len());
+
+    while index != end {
+        let mut tag: u64;
+        asm!(
+            "ldg {tag}, [{index}]",
+            tag = out(reg) tag,
+            index = in(reg) index,
+        );
+        let tagged_index: *const u8 = set_tag(index.cast_mut(), tag);
+        let mut val1: u64;
+        let mut val2: u64;
+        asm!(
+            "ldp {val1}, {val2}, [{tagged_index}]",
+            val1 = out(reg) val1,
+            val2 = out(reg) val2,
+            tagged_index = in(reg) tagged_index,
+        );
+        index = index.add(16);
+
+        index_to = set_tag(index_to, tag);
+        asm!(
+            "stgp {val1}, {val2}, [{index_to}], #16",
+            val1 = in(reg) val1,
+            val2 = in(reg) val2,
+            index_to = inout(reg) index_to,
+        );
+    }
+}
+
+/// In which mode MTE should be enabled
+#[derive(Copy, Clone)]
+pub enum MTEMode {
+    /// Ignore tag check faults
+    None,
+    /// Synchronous tag check fault mode
+    Sync,
+    /// Asynchronous tag check fault mode
+    Async,
+}
+
+impl MTEMode {
+    fn mask(&self) -> u64 {
+        const PR_MTE_TCF_SHIFT: i32 = 1;
+        match self {
+            MTEMode::None => 0,
+            MTEMode::Sync => 1u64 << PR_MTE_TCF_SHIFT,
+            MTEMode::Async => 2u64 << PR_MTE_TCF_SHIFT,
+        }
+    }
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub unsafe fn set_mte_mode(mode: MTEMode) {
+    const PR_SET_TAGGED_ADDR_CTRL: i32 = 55;
+    const PR_TAGGED_ADDR_ENABLE: u64 = 1 << 0;
+    const PR_MTE_TAG_SHIFT: i32 = 3;
+
+    assert_eq!(
+        libc::prctl(
+            PR_SET_TAGGED_ADDR_CTRL,
+            PR_TAGGED_ADDR_ENABLE | mode.mask() | (0xffff << PR_MTE_TAG_SHIFT), // no excluded tags for irg
+            0,
+            0,
+            0,
+        ),
+        0,
+        "could not enable mte"
+    );
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub unsafe fn set_mte_mode_tags(mode: MTEMode, included_tags: u64) {
+    const PR_SET_TAGGED_ADDR_CTRL: i32 = 55;
+    const PR_TAGGED_ADDR_ENABLE: u64 = 1 << 0;
+    const PR_MTE_TAG_SHIFT: i32 = 3;
+
+    assert_eq!(
+        libc::prctl(
+            PR_SET_TAGGED_ADDR_CTRL,
+            PR_TAGGED_ADDR_ENABLE | mode.mask() | (included_tags << PR_MTE_TAG_SHIFT),
+            0,
+            0,
+            0,
+        ),
+        0,
+        "could not enable mte"
+    );
+}

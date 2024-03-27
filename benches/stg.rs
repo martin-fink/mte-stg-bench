@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use mte_measurement::{memset, st2g, st2g_zero, stg, stg_prefetch, stg_zero, stgp, stzg};
+use mte_measurement::{memset, MTEMode, set_mte_mode, st2g, st2g_zero, stg, stg_prefetch, stg_zero, stgp, stzg};
 use rand::random;
 
 // 128 MiB
@@ -34,28 +34,7 @@ fn measure_custom(iters: u64, f: impl Fn(&mut [u8]) -> ()) -> std::time::Duratio
 }
 
 pub fn criterion_benchmark_stg(c: &mut Criterion) {
-    // first we enable MTE for the current process
-    #[cfg(any(target_os = "linux", target_os = "android"))]
-    unsafe {
-        const PR_SET_TAGGED_ADDR_CTRL: i32 = 55;
-        const PR_TAGGED_ADDR_ENABLE: u64 = 1 << 0;
-        const PR_MTE_TCF_SHIFT: i32 = 1;
-        const PR_MTE_TAG_SHIFT: i32 = 3;
-
-        assert_eq!(
-            libc::prctl(
-                PR_SET_TAGGED_ADDR_CTRL,
-                PR_TAGGED_ADDR_ENABLE
-                | (0x1 << PR_MTE_TCF_SHIFT) // sync mte
-                | (0x0 << PR_MTE_TAG_SHIFT), // no excluded tags for irg
-                0,
-                0,
-                0,
-            ),
-            0,
-            "could not enable mte"
-        );
-    }
+    unsafe { set_mte_mode(MTEMode::Sync); }
 
     c.bench_function("memset", |b| {
         b.iter_custom(|iters| measure_custom(iters, |mem| unsafe { memset(black_box(mem)) }))
