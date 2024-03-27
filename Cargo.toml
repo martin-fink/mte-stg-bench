@@ -6,8 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[bin]]
-name = "mte-measurement"
-path = "src/main.rs"
+name = "mte-none"
+path = "src/mte-none.rs"
+
+[[bin]]
+name = "mte-sync"
+path = "src/mte-sync.rs"
+
+[[bin]]
+name = "mte-async"
+path = "src/mte-async.rs"
 
 [dependencies]
 libc = "0.2.153"
@@ -18,4 +26,8 @@ criterion = "0.5.1"
 
 [[bench]]
 name = "stg"
+harness = false
+
+[[bench]]
+name = "sync_async"
 harness = false
