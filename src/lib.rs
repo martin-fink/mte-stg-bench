@@ -7,7 +7,7 @@ fn set_tag(addr: *mut u8, tag: u64) -> *mut u8 {
 }
 
 pub unsafe fn stg(mem: &mut [u8], tag: u64) {
-    assert_eq!(mem.len() % 32, 0);
+    debug_assert_eq!(mem.len() % 32, 0);
 
     let mut index = mem.as_mut_ptr();
     let end = index.add(mem.len());
@@ -18,7 +18,7 @@ pub unsafe fn stg(mem: &mut [u8], tag: u64) {
 }
 
 pub unsafe fn stg_prefetch(mem: &mut [u8], tag: u64) {
-    assert_eq!(mem.len() % 32, 0);
+    debug_assert_eq!(mem.len() % 32, 0);
 
     let index = mem.as_mut_ptr();
     let end = index.add(mem.len());
@@ -81,7 +81,7 @@ pub unsafe fn stg_prefetch(mem: &mut [u8], tag: u64) {
 }
 
 pub unsafe fn stg_zero(mem: &mut [u8], tag: u64) {
-    assert_eq!(mem.len() % 32, 0);
+    debug_assert_eq!(mem.len() % 32, 0);
 
     let mut index = mem.as_mut_ptr();
     let end = index.add(mem.len());
@@ -95,7 +95,7 @@ pub unsafe fn stg_zero(mem: &mut [u8], tag: u64) {
 }
 
 pub unsafe fn stgp(mem: &mut [u8], tag: u64) {
-    assert_eq!(mem.len() % 32, 0);
+    debug_assert_eq!(mem.len() % 32, 0);
 
     let mut index = set_tag(mem.as_mut_ptr(), tag);
     let end = index.add(mem.len());
@@ -108,7 +108,7 @@ pub unsafe fn stgp(mem: &mut [u8], tag: u64) {
 }
 
 pub unsafe fn st2g(mem: &mut [u8], tag: u64) {
-    assert_eq!(mem.len() % 32, 0);
+    debug_assert_eq!(mem.len() % 32, 0);
 
     let mut index = mem.as_mut_ptr();
     let end = index.add(mem.len());
@@ -119,7 +119,7 @@ pub unsafe fn st2g(mem: &mut [u8], tag: u64) {
 }
 
 pub unsafe fn st2g_zero(mem: &mut [u8], tag: u64) {
-    assert_eq!(mem.len() % 32, 0);
+    debug_assert_eq!(mem.len() % 32, 0);
 
     let mut index = mem.as_mut_ptr();
     let end = index.add(mem.len());
@@ -133,7 +133,7 @@ pub unsafe fn st2g_zero(mem: &mut [u8], tag: u64) {
 }
 
 pub unsafe fn stzg(mem: &mut [u8], tag: u64) {
-    assert_eq!(mem.len() % 32, 0);
+    debug_assert_eq!(mem.len() % 32, 0);
 
     let mut index = mem.as_mut_ptr();
     let end = index.add(mem.len());
@@ -144,13 +144,13 @@ pub unsafe fn stzg(mem: &mut [u8], tag: u64) {
 }
 
 pub unsafe fn memset(mem: &mut [u8]) {
-    assert_eq!(mem.len() % 32, 0);
+    debug_assert_eq!(mem.len() % 32, 0);
 
     mem.fill(0);
 }
 
 pub unsafe fn set_tags_random(mem: &mut [u8]) {
-    assert_eq!(mem.len() % 16, 0);
+    debug_assert_eq!(mem.len() % 16, 0);
 
     let mut index = mem.as_mut_ptr();
     let end = index.add(mem.len());
@@ -168,8 +168,8 @@ pub unsafe fn set_tags_random(mem: &mut [u8]) {
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub unsafe fn migrate_mte_off(from: &[u8], to: &mut [u8]) {
-    assert_eq!(from.len() % 16, 0);
-    assert!(to.len() >= from.len());
+    debug_assert_eq!(from.len() % 16, 0);
+    debug_assert!(to.len() >= from.len());
 
     set_mte_mode(MTEMode::None);
 
@@ -194,36 +194,23 @@ pub unsafe fn migrate_mte_off(from: &[u8], to: &mut [u8]) {
 }
 
 pub unsafe fn migrate_tags(from: &[u8], to: &mut [u8]) {
-    assert!(to.len() >= from.len());
+    debug_assert!(to.len() >= from.len());
 
     let mut index = from.as_ptr();
     let mut index_to = to.as_mut_ptr();
     let end = index.add(from.len());
 
     while index != end {
-        let mut tag: u64;
         asm!(
-            "ldg {tag}, [{index}]",
-            tag = out(reg) tag,
-            index = in(reg) index,
-        );
-        let tagged_index: *const u8 = set_tag(index.cast_mut(), tag);
-        let mut val1: u64;
-        let mut val2: u64;
-        asm!(
-            "ldp {val1}, {val2}, [{tagged_index}]",
-            val1 = out(reg) val1,
-            val2 = out(reg) val2,
-            tagged_index = in(reg) tagged_index,
-        );
-        index = index.add(16);
-
-        index_to = set_tag(index_to, tag);
-        asm!(
+            "ldg {index}, [{index}]",
+            "ldg {index_to}, [{index}]",
+            "ldp {val1}, {val2}, [{index}]",
             "stgp {val1}, {val2}, [{index_to}], #16",
-            val1 = in(reg) val1,
-            val2 = in(reg) val2,
+            "add {index}, {index}, #16",
+            index = inout(reg) index,
             index_to = inout(reg) index_to,
+            val1 = out(reg) _,
+            val2 = out(reg) _,
         );
     }
 }
