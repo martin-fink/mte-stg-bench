@@ -53,9 +53,9 @@ fn main() {
         std::thread::sleep(std::time::Duration::from_secs(15));
     }
 
-    print!("[");
-    for result in results {
-        print!("{}", result.as_millis());
-    }
-    print!("]");
+    let result = results.iter().map(|result| result.as_millis())
+        .map(|m| m.to_string())
+        .collect::<Vec<_>>()
+        .join(", ");
+    println!("[{}]", result);
 }
