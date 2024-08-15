@@ -5,6 +5,8 @@ use mte_measurement::{memset, MTEMode, set_mte_mode, st2g, st2g_zero, stg, stg_z
 // 128 MiB
 const SIZE: usize = 128 * 1024 * 1024;
 
+const ITERS: u32 = 50;
+
 fn measure_custom(iters: u64, f: impl Fn(&mut [u8]) -> ()) -> std::time::Duration {
     let mut result = std::time::Duration::from_secs(0);
 
@@ -51,8 +53,8 @@ fn main() {
     let mut results = Vec::new();
 
     for (_, f) in fns.iter() {
-        let result = measure_custom(50, f);
-        results.push(result);
+        let result = measure_custom(ITERS.into(), f);
+        results.push(result / ITERS);
         std::thread::sleep(std::time::Duration::from_secs(15));
     }
 

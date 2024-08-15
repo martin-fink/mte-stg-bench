@@ -4,6 +4,8 @@ use mte_measurement::{memset, MTEMode, set_mte_mode};
 // 128 MiB
 const SIZE: usize = 128 * 1024 * 1024;
 
+const ITERS: u32 = 50;
+
 fn measure_custom(iters: u64, mode: MTEMode, f: impl Fn(&mut [u8]) -> ()) -> std::time::Duration {
     let mut result = std::time::Duration::from_secs(0);
 
@@ -46,10 +48,10 @@ fn main() {
     let mut results = Vec::new();
 
     for mode in modes {
-        let result = measure_custom(50, mode, |mem| unsafe {
+        let result = measure_custom(ITERS.into(), mode, |mem| unsafe {
             memset(black_box(mem));
         });
-        results.push(result);
+        results.push(result / ITERS);
         std::thread::sleep(std::time::Duration::from_secs(15));
     }
 
