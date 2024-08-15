@@ -21,6 +21,10 @@ path = "src/mte-async.rs"
 name = "migrate"
 path = "src/migrate.rs"
 
+[[bin]]
+name = "stg"
+path = "src/stg.rs"
+
 [dependencies]
 libc = "0.2.153"
 rand = "0.9.0-alpha.1"
