@@ -1,5 +1,6 @@
 use std::hint::black_box;
-use mte_measurement::{memset, MTEMode, set_mte_mode};
+use rand::random;
+use mte_measurement::{memset, MTEMode, set_mte_mode, st2g, st2g_zero, stg, stg_zero, stgp, stz2g, stzg};
 
 // 128 MiB
 const SIZE: usize = 128 * 1024 * 1024;
@@ -38,13 +39,13 @@ fn main() {
     }
     let fns: [(&'static str, Box<dyn Fn(&mut [u8]) -> ()>); 8] = [
         ("memset", Box::new(|mem| unsafe { memset(black_box(mem)) })),
-        ("stg", Box::new(|mem| unsafe { memset(black_box(mem)) })),
-        ("stgp", Box::new(|mem| unsafe { memset(black_box(mem)) })),
-        ("st2g", Box::new(|mem| unsafe { memset(black_box(mem)) })),
-        ("stzg", Box::new(|mem| unsafe { memset(black_box(mem)) })),
-        ("stz2g", Box::new(|mem| unsafe { memset(black_box(mem)) })),
-        ("stg+memset", Box::new(|mem| unsafe { memset(black_box(mem)) })),
-        ("st2g+memset", Box::new(|mem| unsafe { memset(black_box(mem)) })),
+        ("stg", Box::new(|mem| unsafe { stg(black_box(mem), black_box(random())) })),
+        ("stgp", Box::new(|mem| unsafe { stgp(black_box(mem), black_box(random())) })),
+        ("st2g", Box::new(|mem| unsafe { st2g(black_box(mem), black_box(random())) })),
+        ("stzg", Box::new(|mem| unsafe { stzg(black_box(mem), black_box(random())) })),
+        ("stz2g", Box::new(|mem| unsafe { stz2g(black_box(mem), black_box(random())) })),
+        ("stg+memset", Box::new(|mem| unsafe { stg_zero(black_box(mem), black_box(random())) })),
+        ("st2g+memset", Box::new(|mem| unsafe { st2g_zero(black_box(mem), black_box(random())) })),
     ];
 
     let mut results = Vec::new();
