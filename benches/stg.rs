@@ -1,9 +1,11 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use mte_measurement::{memset, MTEMode, set_mte_mode, st2g, st2g_zero, stg, stg_prefetch, stg_zero, stgp, stzg};
+use mte_measurement::{
+    memset, set_mte_mode, st2g, st2g_zero, stg, stg_zero, stgp, stz2g, stzg, MTEMode,
+};
 use rand::random;
 
 // 128 MiB
-const SIZE: usize = 256 * 1024 * 1024;
+const SIZE: usize = 128 * 1024 * 1024;
 
 fn measure_custom(iters: u64, f: impl Fn(&mut [u8]) -> ()) -> std::time::Duration {
     let mut result = std::time::Duration::from_secs(0);
@@ -34,7 +36,9 @@ fn measure_custom(iters: u64, f: impl Fn(&mut [u8]) -> ()) -> std::time::Duratio
 }
 
 pub fn criterion_benchmark_stg(c: &mut Criterion) {
-    unsafe { set_mte_mode(MTEMode::Sync); }
+    unsafe {
+        set_mte_mode(MTEMode::Sync);
+    }
 
     c.bench_function("memset", |b| {
         b.iter_custom(|iters| measure_custom(iters, |mem| unsafe { memset(black_box(mem)) }))
@@ -43,13 +47,6 @@ pub fn criterion_benchmark_stg(c: &mut Criterion) {
         b.iter_custom(|iters| {
             measure_custom(iters, |mem| unsafe {
                 stg(black_box(mem), black_box(random()))
-            })
-        })
-    });
-    c.bench_function("stg+prefetch", |b| {
-        b.iter_custom(|iters| {
-            measure_custom(iters, |mem| unsafe {
-                stg_prefetch(black_box(mem), black_box(random()))
             })
         })
     });
@@ -71,6 +68,13 @@ pub fn criterion_benchmark_stg(c: &mut Criterion) {
         b.iter_custom(|iters| {
             measure_custom(iters, |mem| unsafe {
                 stzg(black_box(mem), black_box(random()))
+            })
+        })
+    });
+    c.bench_function("stz2g", |b| {
+        b.iter_custom(|iters| {
+            measure_custom(iters, |mem| unsafe {
+                stz2g(black_box(mem), black_box(random()))
             })
         })
     });

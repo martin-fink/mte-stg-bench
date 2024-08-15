@@ -1,13 +1,10 @@
-use mte_measurement::{migrate_tags, MTEMode, set_mte_mode, set_tags_random};
+use mte_measurement::{migrate_tags, set_mte_mode, set_tags_random, MTEMode};
 use rand::random;
 use std::hint::black_box;
 
 const SIZE: usize = 512;
 
-fn measure_custom(
-    iters: u64,
-    f: impl Fn(&[u8], &mut [u8]) -> (),
-) -> std::time::Duration {
+fn measure_custom(iters: u64, f: impl Fn(&[u8], &mut [u8]) -> ()) -> std::time::Duration {
     let mut result = std::time::Duration::from_secs(0);
 
     let mut mem = unsafe {
@@ -59,7 +56,9 @@ fn measure_custom(
 }
 
 fn main() {
-    unsafe { set_mte_mode(MTEMode::Sync); }
+    unsafe {
+        set_mte_mode(MTEMode::Sync);
+    }
 
     measure_custom(black_box(1), |from, to| unsafe {
         migrate_tags(from, to);

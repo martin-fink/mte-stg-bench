@@ -143,6 +143,17 @@ pub unsafe fn stzg(mem: &mut [u8], tag: u64) {
     }
 }
 
+pub unsafe fn stz2g(mem: &mut [u8], tag: u64) {
+    debug_assert_eq!(mem.len() % 32, 0);
+
+    let mut index = mem.as_mut_ptr();
+    let end = index.add(mem.len());
+
+    while index != end {
+        asm!("stz2g {tag}, [{index}], #32", tag = in(reg) tag, index = inout(reg) index);
+    }
+}
+
 pub unsafe fn memset(mem: &mut [u8]) {
     debug_assert_eq!(mem.len() % 32, 0);
 

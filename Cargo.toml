@@ -35,7 +35,3 @@ harness = false
 [[bench]]
 name = "sync_async"
 harness = false
-
-[[bench]]
-name = "migrate"
-harness = false

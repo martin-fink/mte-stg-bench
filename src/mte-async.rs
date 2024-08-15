@@ -1,5 +1,5 @@
+use mte_measurement::{memset, set_mte_mode, MTEMode};
 use std::hint::black_box;
-use mte_measurement::{memset, MTEMode, set_mte_mode};
 
 // 64 KiB -- should fit into L1 cache of Cortex X3 (128 KiB L1 cache)
 const SIZE: usize = 64 * 1024;
