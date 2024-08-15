@@ -26,8 +26,8 @@ name = "stg"
 path = "src/stg.rs"
 
 [[bin]]
-name = "mte-migrate"
-path = "src/mte-migrate.rs"
+name = "mte-mode"
+path = "src/mte-mode.rs"
 
 [dependencies]
 libc = "0.2.153"
