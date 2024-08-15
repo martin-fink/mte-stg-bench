@@ -25,6 +25,10 @@ path = "src/migrate.rs"
 name = "stg"
 path = "src/stg.rs"
 
+[[bin]]
+name = "mte-migrate"
+path = "src/mte-migrate.rs"
+
 [dependencies]
 libc = "0.2.153"
 rand = "0.9.0-alpha.1"
