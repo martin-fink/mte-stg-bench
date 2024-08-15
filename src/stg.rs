@@ -53,6 +53,7 @@ fn main() {
     for (_, f) in fns.iter() {
         let result = measure_custom(50, f);
         results.push(result);
+        std::thread::sleep(std::time::Duration::from_secs(15));
     }
 
     print!("[");

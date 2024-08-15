@@ -50,6 +50,7 @@ fn main() {
             memset(black_box(mem));
         });
         results.push(result);
+        std::thread::sleep(std::time::Duration::from_secs(15));
     }
 
     print!("[");
